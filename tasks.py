@@ -2,7 +2,7 @@ import luigi
 import pandas as pd
 
 ## Load data
-class LoadData(luigi.Tasks):
+class LoadData(luigi.Task):
     param = luigi.Parameter(42)
 
     def requires(self):
@@ -15,7 +15,7 @@ class LoadData(luigi.Tasks):
         return luigi.LocalTarget(f"cache/data_out_{param}")
 
 ## Transform data
-class TransformData(luigi.Tasks):
+class TransformData(luigi.Task):
 
     def requires(self):
         return LoadData(self.date)
@@ -28,7 +28,7 @@ class TransformData(luigi.Tasks):
         return luigi.LocalTarget(f"cache/data_tranformed_{param}")
 
 ## Train
-class Train(luigi.Tasks):
+class Train(luigi.Task):
 
     def requires(self):
         return TransformData(self.date)
@@ -43,7 +43,7 @@ class Train(luigi.Tasks):
         return luigi.LocalTarget(f"cache/model_{param}")
 
 ## create output
-class Predict(luigi.Tasks):
+class Predict(luigi.Task):
 
     def requires(self):
         return Train(self.date)
@@ -57,6 +57,6 @@ class Predict(luigi.Tasks):
         return luigi.LocalTarget(f"cache/data_tranformed_{param}")
 
 ## Wrap
-class Tasks(luigi.Tasks):
+class Tasks(luigi.Task):
     def requires(self):
         return Predict(self.date)
