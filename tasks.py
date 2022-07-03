@@ -1,7 +1,10 @@
 import luigi
 import pandas as pd
 import src.algo as algo
-
+import src.data_in as dt_in
+from setup import token
+import pickle
+import os
 
 ## Load data
 class LoadData(luigi.Task):
@@ -11,10 +14,17 @@ class LoadData(luigi.Task):
         None
     
     def run(self):
-        data = pd.read_csv("data/data_in.csv")
+        tweet_fields = "tweet.fields=text,author_id,created_at"
+        since = "start_time=2022-06-26T19:16:12.000Z"
+        query="from: ECONdailycharts"
+
+        print(os.getcwd())
+        out = dt_in.search_twitter(query, tweet_fields, since, token)
+        filehandler = open(f"cache\data_out_{self.param}.pkl", 'wb') 
+        pickle.dump(out, filehandler)
     
     def output(self):
-        return luigi.LocalTarget(f"cache/data_out_{self.param}")
+        return luigi.LocalTarget(f"cache\data_out_{self.param}.pkl")
 
 ## Transform data
 class TransformData(luigi.Task):
