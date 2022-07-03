@@ -4,6 +4,7 @@ import src.algo as algo
 import src.data_in as dt_in
 from setup import token
 import pickle
+import src.data_prep as prep
 import os
 
 ## Load data
@@ -18,7 +19,6 @@ class LoadData(luigi.Task):
         since = "start_time=2022-06-26T19:16:12.000Z"
         query="from: ECONdailycharts"
 
-        print(os.getcwd())
         out = dt_in.search_twitter(query, tweet_fields, since, token)
         filehandler = open(f"cache\data_out_{self.param}.pkl", 'wb') 
         pickle.dump(out, filehandler)
@@ -30,44 +30,34 @@ class LoadData(luigi.Task):
 class TransformData(luigi.Task):
     param = luigi.Parameter(42)
     def requires(self):
-        return LoadData(self.date)
+        return LoadData(self.param)
     
     def run(self):
-        data = pd.read_feather("data/data_in")
-    
-    def output(self):
-        data.to_feather(f"cache/data_tranformed_{param}")
-        return luigi.LocalTarget(f"cache/data_tranformed_{param}")
+        filehandler = open(f"cache\data_out_{self.param}.pkl", 'rb') 
+        out = pickle.load(filehandler)
 
-## Train
-class Train(luigi.Task):
-    param = luigi.Parameter(42)
-    
-    def requires(self):
-        return TransformData(self.date)
-    
-    def run(self):
-        data = pd.read_feather(f"cache/data_tranformed_{param}")
-        model = algo.Model()
-        model.train(data)
-    
+        out_df, tokens_list = prep.transform_data(out)
+        out_df.to_feather(f"cache/data_tranformed_{self.param}")
+        
+        filehandler = open(f"cache/tokens_list_{self.param}.pkl", 'wb') 
+        pickle.dump(tokens_list, filehandler)
+        
     def output(self):
-        model.to_pickle(f"cache/model_{param}")
-        return luigi.LocalTarget(f"cache/model_{param}")
+        return luigi.LocalTarget(f"cache/data_tranformed_{self.param}")
+
 
 ## create output
 class Predict(luigi.Task):
     param = luigi.Parameter(42)
 
     def requires(self):
-        return Train(self.date)
+        return TransformData(self.date)
     
     def run(self):
         model = algo.Model()
         model.train()
     
     def output(self):
-        data.to_feather(f"cache/data_tranformed_{param}")
         return luigi.LocalTarget(f"cache/data_tranformed_{param}")
 
 ## Wrap

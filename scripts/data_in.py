@@ -5,6 +5,7 @@ import requests
 import json
 import tweepy as tw
 import src.data_in as dt_in
+import pandas as pd
 from setup import token
 # %%
 tweet_fields = "tweet.fields=text,author_id,created_at"
