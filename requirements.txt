@@ -4,3 +4,5 @@ pyarrow==8.0.0
 ipykernel==6.15.0
 tweepy==4.10.0
 python-dotenv==0.20.0
+matplotlib==3.5.2
+wordcloud==1.8.2.2

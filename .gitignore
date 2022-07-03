@@ -2,3 +2,4 @@
 .vscode
 .env
 *pycache*
+cache
