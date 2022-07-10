@@ -6,17 +6,18 @@ from setup import token
 import pickle
 import src.data_prep as prep
 import os
+import datetime
 
 ## Load data
 class LoadData(luigi.Task):
-    param = luigi.Parameter(default=42)
+    param = luigi.Parameter(default=datetime.date.today())
 
     def requires(self):
         None
     
     def run(self):
         tweet_fields = "tweet.fields=text,author_id,created_at"
-        since = "start_time=2022-06-26T19:16:12.000Z"
+        since = "start_time=2022-07-05T19:16:12.000Z"
         query="from: ECONdailycharts"
 
         out = dt_in.search_twitter(query, tweet_fields, since, token)
@@ -64,3 +65,6 @@ class Predict(luigi.Task):
 class Tasks(luigi.Task):
     def requires(self):
         return Predict(self.date)
+
+if __name__ == "main":
+    luigi.run()

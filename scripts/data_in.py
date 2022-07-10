@@ -17,7 +17,7 @@ out = dt_in.search_twitter(query, tweet_fields, since, token)
 # %%
 out["data"]
 # %%
-out_df, flat = prep.transform_data(out) 
+out_df, flat = prep.transform_data(out)
 # %%
 from importlib import reload
 reload(prep)
