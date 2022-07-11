@@ -7,49 +7,54 @@ import pickle
 import src.data_prep as prep
 import os
 import datetime
+import logging
+
+logger = logging.Logger("__main__")
 
 ## Load data
 class LoadData(luigi.Task):
-    param = luigi.Parameter(default=datetime.date.today())
+    last_date_of_report = luigi.Parameter(default=datetime.date.today())
 
     def requires(self):
         None
     
     def run(self):
         tweet_fields = "tweet.fields=text,author_id,created_at"
-        since = "start_time=2022-07-05T19:16:12.000Z"
+        print(self.last_date_of_report - datetime.timedelta(days=6))
+        since = f"start_time={str(self.last_date_of_report - datetime.timedelta(days=6))}T19:16:12.000Z"
         query="from: ECONdailycharts"
 
         out = dt_in.search_twitter(query, tweet_fields, since, token)
-        filehandler = open(f"cache\data_out_{self.param}.pkl", 'wb') 
+        filehandler = open(f"cache\data_out_{self.last_date_of_report}.pkl", 'wb') 
         pickle.dump(out, filehandler)
     
     def output(self):
-        return luigi.LocalTarget(f"cache\data_out_{self.param}.pkl")
+        return luigi.LocalTarget(f"cache\data_out_{self.last_date_of_report}.pkl")
 
 ## Transform data
 class TransformData(luigi.Task):
-    param = luigi.Parameter(42)
+    last_date_of_report = luigi.Parameter(default=datetime.date.today())
+
     def requires(self):
-        return LoadData(self.param)
+        return LoadData(self.last_date_of_report)
     
     def run(self):
-        filehandler = open(f"cache\data_out_{self.param}.pkl", 'rb') 
+        filehandler = open(f"cache\data_out_{self.last_date_of_report}.pkl", 'rb') 
         out = pickle.load(filehandler)
 
         out_df, tokens_list = prep.transform_data(out)
-        out_df.to_feather(f"cache/data_tranformed_{self.param}")
+        out_df.to_feather(f"cache/data_transformed_{self.last_date_of_report}")
         
-        filehandler = open(f"cache/tokens_list_{self.param}.pkl", 'wb') 
+        filehandler = open(f"cache/tokens_list_{self.last_date_of_report}.pkl", 'wb') 
         pickle.dump(tokens_list, filehandler)
         
     def output(self):
-        return luigi.LocalTarget(f"cache/data_tranformed_{self.param}")
+        return luigi.LocalTarget(f"cache/data_tranformed_{self.last_date_of_report}")
 
 
 ## create output
 class Predict(luigi.Task):
-    param = luigi.Parameter(42)
+    last_date_of_report = luigi.Parameter(default=datetime.date.today())
 
     def requires(self):
         return TransformData(self.date)
@@ -59,7 +64,7 @@ class Predict(luigi.Task):
         model.train()
     
     def output(self):
-        return luigi.LocalTarget(f"cache/data_tranformed_{param}")
+        return luigi.LocalTarget(f"cache/data_tranformed_{last_date_of_report}")
 
 ## Wrap
 class Tasks(luigi.Task):
