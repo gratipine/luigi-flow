@@ -25,7 +25,7 @@ class LoadData(luigi.Task):
         query="from: ECONdailycharts"
 
         out = dt_in.search_twitter(query, tweet_fields, since, token)
-        filehandler = open(f"cache\data_out_{self.last_date_of_report}.pkl", 'wb') 
+        filehandler = open(self.output().path, 'wb') 
         pickle.dump(out, filehandler)
     
     def output(self):
@@ -42,34 +42,55 @@ class TransformData(luigi.Task):
         filehandler = open(f"cache\data_out_{self.last_date_of_report}.pkl", 'rb') 
         out = pickle.load(filehandler)
 
-        out_df, tokens_list = prep.transform_data(out)
-        out_df.to_feather(f"cache/data_transformed_{self.last_date_of_report}")
+        _, tokens_list = prep.transform_data(out)
         
-        filehandler = open(f"cache/tokens_list_{self.last_date_of_report}.pkl", 'wb') 
+        filehandler = open(self.output().path, 'wb') 
         pickle.dump(tokens_list, filehandler)
         
     def output(self):
-        return luigi.LocalTarget(f"cache/data_tranformed_{self.last_date_of_report}")
+        return luigi.LocalTarget(f"cache/tokens_list_{self.last_date_of_report}.pkl")
 
-
-## create output
-class Predict(luigi.Task):
+## create notebook
+class CreateNotebook(luigi.Task):
     last_date_of_report = luigi.Parameter(default=datetime.date.today())
 
     def requires(self):
-        return TransformData(self.date)
+        return TransformData(self.last_date_of_report)
     
     def run(self):
-        model = algo.Model()
-        model.train()
-    
+        command = (
+            f"""papermill -p date "{str(self.last_date_of_report)}" scripts/template.ipynb {self.output().path}"""
+        )
+        os.system(f'cmd /c {command}')
+
     def output(self):
-        return luigi.LocalTarget(f"cache/data_tranformed_{last_date_of_report}")
+        return luigi.LocalTarget(f"cache/parametrized_{self.last_date_of_report}.ipynb")
+
+## create output
+class RenderPDF(luigi.Task):
+    last_date_of_report = luigi.Parameter(default=datetime.date.today())
+
+    def requires(self):
+        return CreateNotebook(self.last_date_of_report)
+    
+    def run(self):     
+        command = (
+            f"""jupyter nbconvert --to pdf cache/parametrized_{self.last_date_of_report}.ipynb""" + 
+            f""" --output {self.output().path} --TagRemovePreprocessor.enabled=True""" +
+            """ --TagRemovePreprocessor.remove_cell_tags remove-cell""" + 
+            """ --TagRemovePreprocessor.remove_input_tags input-cell"""
+        )
+        os.system(f'cmd /c {command}')
+
+    def output(self):
+        return luigi.LocalTarget(f"report_{self.last_date_of_report}.pdf")
 
 ## Wrap
 class Tasks(luigi.Task):
+    date = luigi.Parameter(default=datetime.date.today())
+
     def requires(self):
-        return Predict(self.date)
+        return RenderPDF(self.date)
 
 if __name__ == "main":
     luigi.run()
