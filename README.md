@@ -1,4 +1,4 @@
-## installations
+## Installations
 ```
 py -m venv .venv 
 ```
@@ -7,12 +7,8 @@ py -m venv .venv
 pip install wheel
 pip install -r requirements.txt
 ```
-```
-python -m luigi --module tasks LoadData --last-date-of-report  --local-scheduler
-```
 
+## Running tasks
 ```
-python -m luigi --module tasks LoadData --local-scheduler
+python -m luigi --module tasks RenderPDF --local-scheduler
 ```
-python -m luigi --module tasks TransformData --local-scheduler
-python -m luigi --module tasks Render --local-scheduler

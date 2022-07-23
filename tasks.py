@@ -85,12 +85,6 @@ class RenderPDF(luigi.Task):
     def output(self):
         return luigi.LocalTarget(f"report_{self.last_date_of_report}.pdf")
 
-## Wrap
-class Tasks(luigi.Task):
-    date = luigi.Parameter(default=datetime.date.today())
-
-    def requires(self):
-        return RenderPDF(self.date)
 
 if __name__ == "main":
     luigi.run()
